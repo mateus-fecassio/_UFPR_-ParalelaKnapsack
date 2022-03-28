@@ -47,10 +47,10 @@ int knapSack(int W, int wt[], int val[], int n){
 	{
 	#pragma omp for schedule(static,CHUNCK_SIZE)
 		for (w = W; w >= 0; w--){
-			if (wt[i - 1] <= w)
+			if (weight <= w)
                 // finding the maximum value
                 dp[w] = max(dp[w],
-                            dp[w - wt[i - 1]] + val[i - 1]);
+                            dp[w - weight] + value);
 		}
     }
 	

@@ -43,19 +43,12 @@ int knapSack(int W, int wt[], int val[], int n){
 	for (i = 1; i < n + 1; i++){
 		weight = wt[i];
 		value = val[i];
-	#pragma omp parallel num_threads(N_THREADS) shared(dp) firstprivate(weight, value) private(max_v) proc_bind(close)
-	{
-	// #pragma omp single
-	// 	N_THREADS = omp_get_num_threads();
-	#pragma omp for simd schedule(guided,CHUNCK_SIZE)
 		for (int w = W; w >= 0; w--){
 			// calc = w - weight;
 			if ( (weight <= w) && ((max_v = dp[w - weight] + value) > dp[w]) ){
 				dp[w] = max_v;
 			}	
 		}
-		
-    }
 	
 	// printf( "THREADS CRIADAS = %d\n", omp_get_num_threads() );
 	}
