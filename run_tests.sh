@@ -13,7 +13,8 @@ fi
 # lstopo --output-format png -v --whole-system --no-collapse --gridsize 20 --horiz > cpu_info.png
 
 
-export OMP_WAIT_POLICY=PASSIVE
+# export OMP_WAIT_POLICY=PASSIVE
+export OMP_WAIT_POLICY=ACTIVE
 
 threads=(2 4 8 12)
 
@@ -23,23 +24,25 @@ ITEMS=$(find $INPUT -maxdepth 1 -type f | xargs ls -1t | tac)
 
 
 
-# SEQUENCIAL (recursivo)
-gcc -O3 1-naive.c -o naive
-REC=./naive
-for entry in ${ITEMS[@]}
-do
-    size=$(echo $entry | awk -F"/" '{print $3}')
+# SEQUENCIAL (recursivo) -- IMPRATICÁVEL! DEMORA DEMAIS (entradas acima de 400 objetos)
+# gcc -O3 1-naive.c -o naive
+# REC=./naive
+# for entry in ${ITEMS[@]}
+# do
     
-    out_s=$OUTPUT"/sequencial/"$size
-    out_s=$out_s.csv
-    echo "i,n_obj,max_weight,max_value,seq_time" > "$out_s"
-    for i in {1..20}
-    do
-        printf "$((i))," >> "$out_s"
-        # nice -n -20 $REC < $entry >> "$out_s"
-        $REC < $entry >> "$out_s"
-    done
-done
+#     size=$(echo $entry | awk -F"/" '{print $3}')
+#     echo "RECURSIVO: $entry"
+    
+#     out_s=$OUTPUT"/recursivo/"$size
+#     out_s=$out_s.csv
+#     echo "i;n_obj;max_weight;max_value;seq_time" > "$out_s"
+#     for i in {1..1}
+#     do
+#         printf "$((i));" >> "$out_s"
+#         # nice -n -20 $REC < $entry >> "$out_s"
+#         $REC < $entry | tr "." "," >> "$out_s"
+#     done
+# done
 
 
 
@@ -50,15 +53,16 @@ SEQ=./s_knapsack
 for entry in ${ITEMS[@]}
 do
     size=$(echo $entry | awk -F"/" '{print $3}')
+    echo "SEQUENCIAL: $entry"
     
     out_s=$OUTPUT"/sequencial/"$size
     out_s=$out_s.csv
-    echo "i,n_obj,max_weight,max_value,seq_time" > "$out_s"
+    echo "i;n_obj;max_weight;max_value;seq_time" > "$out_s"
     for i in {1..20}
     do
-        printf "$((i))," >> "$out_s"
+        printf "$((i));" >> "$out_s"
         # nice -n -20 $SEQ < $entry >> "$out_s"
-        $SEQ < $entry >> "$out_s"
+        $SEQ < $entry | tr "." "," >> "$out_s"
     done
 done
 
@@ -73,15 +77,16 @@ do
 
     for thread in ${threads[@]}
     do
+        echo "PARALELO($thread): $entry"
         out_p=$OUTPUT"/paralelo/"$thread-$size
         out_p=$out_p.csv
-        echo "i,N_THREADS,n_obj,max_weight,max_value,time,seq_time,par_time" > "$out_p"
+        echo "i;N_THREADS;n_obj;max_weight;max_value;time;seq_time;par_time" > "$out_p"
 
         for i in {1..20}
         do
-            printf "$((i))," >> "$out_p"
+            printf "$((i));" >> "$out_p"
             # nice -n -20 $PAR $thread $CACHEL2 < $entry >> "$out_p"
-            $PAR $thread $CACHEL2 < $entry >> "$out_p"
+            $PAR $thread $CACHEL2 < $entry | tr "." "," >> "$out_p"
         done
     done
 done

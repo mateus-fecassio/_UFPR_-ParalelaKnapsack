@@ -42,7 +42,7 @@ int knapSack(int W, int wt[], int val[], int n){
 	//define o tamanho do chunk a ser utilizado. 
 	//estamos trabalhando com dois vetores de inteiros (aux,dp) e dois valores inteiros (weight, value) 
 	//que seria muito bom guarda-los em memória e não fossem despejados quando uma nova linha de cache chegasse
-	CHUNCK_SIZE = CACHE_SIZE / abs( (N_THREADS * sizeof(int)) - (2 * sizeof(int)) );
+	CHUNCK_SIZE = CACHE_SIZE / abs( (N_THREADS * sizeof(int)) );
 
 	int i = 1;
 	int w = W;
@@ -126,7 +126,7 @@ int main(int argc, char **argv){
     int max_value = knapSack(W, wt, val, n);
 	//--------------------------
 
-	printf("%d,%d,%d,%d,%g,%g,%g\n", N_THREADS,n,W,max_value,seq_time+par_time,seq_time,par_time); //PRINT FINAL
+	printf("%d;%d;%d;%d;%g;%g;%g\n", N_THREADS,n,W,max_value,seq_time+par_time,seq_time,par_time); //PRINT FINAL
 
 	free(val);
 	free(wt);

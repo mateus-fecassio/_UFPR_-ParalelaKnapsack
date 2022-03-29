@@ -63,7 +63,7 @@ int main(){
 	double s_end = timestamp();						//T2
 	//--------------------------
 
-	printf("%d,%d,%d,%g\n", n,W,max_value,s_end-s_init); //PRINT FINAL
+	printf("%d;%d;%d;%g\n", n,W,max_value,s_end-s_init); //PRINT FINAL
 
 	free(val);
 	free(wt);
