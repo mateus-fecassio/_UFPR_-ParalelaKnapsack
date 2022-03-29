@@ -31,7 +31,8 @@ int max(int a, int b){
 int knapSack(int W, int wt[], int val[], int n){
     //aloca o vetor com uma posição a mais que o peso da mochila e inicializa com zeros
 	int *dp = (int*) calloc(W+1, sizeof(int));
-	int weight, calc, value, max_v = 0;
+	int *aux = (int*) calloc(W+1, sizeof(int)); //utilizado para guardar os itens que devem ser comparados na próxima iteração
+	int j, weight, calc, value, max_v = 0;
 
 	//define o chunk_size. Como estamos trabalhando com três vetores de inteiros(dp,wt,val), então 3 * 4 bytes
 	CHUNCK_SIZE = CACHE_SIZE / N_THREADS*8;
@@ -40,20 +41,29 @@ int knapSack(int W, int wt[], int val[], int n){
 	int i = 1;
 	int w = W;
 	
-	for (i = 1; i < n + 1; i++){
-		weight = wt[i - 1];
-		value = val[i - 1];
+	for (i = 1; i <= n; i++){
+		weight = wt[i];
+		value = val[i];
+		
 	#pragma omp parallel num_threads(N_THREADS) shared(dp, weight, value, W) private(w) firstprivate(i) proc_bind(close)
 	{
-	#pragma omp for schedule(static,CHUNCK_SIZE)
-		for (w = W; w >= 0; w--){
+	#pragma omp for simd schedule(guided,CHUNCK_SIZE)
+		for (w = 1; w <= W; w++){
 			if (weight <= w)
-                // finding the maximum value
-                dp[w] = max(dp[w],
-                            dp[w - weight] + value);
+			//encontra o maior valor
+			aux[w] = max(dp[w],
+						 dp[w - weight] + value);
 		}
+		
     }
-	
+	memmove(dp, aux, (W+1) * sizeof(int) );
+	//memset(aux,0,sizeof(int));
+	// for (j = 0; j < W+1; j++)
+	// 	printf("%d   ", aux[j]);
+	// printf("\n");
+	// for (j = 0; j < W+1; j++)
+	// 	printf("%d   ", dp[j]);
+	// break;
 	// printf( "THREADS CRIADAS = %d\n", omp_get_num_threads() );
 	}
     return dp[W]; //retorna o maior valor encontrado
@@ -101,6 +111,8 @@ int main(int argc, char **argv){
 	double timeBegin = timestamp();
     int max_value = knapSack(W, wt, val, n);
     double timeEnd = timestamp();
+
+	// printf("%d       ", sizeof(int));
 
 
 	// printf("MAXIMUM VALUE = %d, with %g ms\n", max_value, timeEnd-timeBegin);
