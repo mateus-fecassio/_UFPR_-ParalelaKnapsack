@@ -51,7 +51,7 @@ int knapSack(int W, int wt[], int val[], int n){
 	seq_time += s_end - s_init;
 
 	for (i = 0; i < n; i++){
-		weight = wt[i];
+		weight = wt[i]; //armazena em uma única variável, o que pode permitir que esse dado não sofra despejo caso novas linhas precisem ser instaladas na cache.
 		value = val[i];
 		
 		#pragma omp parallel num_threads(N_THREADS) shared(dp, weight, value, W) private(w) firstprivate(i) proc_bind(close)
