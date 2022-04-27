@@ -1,13 +1,36 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <omp.h>
 
+//-------------------------ESCOPO DAS FUNÇÕES
+double timestamp(void);
+int max(int a, int b);
+int** get_matrix(int rows, int columns);
+void free_matrix(int** mat);
+int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n);
+//-------------------------
 
-// A utility function that returns
-// maximum of two integers
+
+//---------------------------------------VARIÁVEIS GLOBAIS
+
+
+
+
+
+//---------------------------------------FUNÇÕES UTILITÁRIAS
+// FUNÇÃO PARA O CÁCULO DO TEMPO
+double timestamp(void){
+    struct timeval tp;
+    gettimeofday(&tp,NULL);
+    return ((double)(tp.tv_sec + (double)tp.tv_usec/1000000)); //em segundos
+}
+
+// FUNÇÃO UTILITÁRIA que vai retornar o máximo entre dois inteiros
 int max(int a, int b) {return (a > b) ? a : b;}
 
 
+// FUNÇÃO UTILITÁRIA que vai alocar uma matriz auxiliar
 int** get_matrix(int rows, int columns) {   
     int **mat;
     int i;
@@ -24,12 +47,14 @@ int** get_matrix(int rows, int columns) {
     return mat;
 }
 
+// FUNÇÃO UTILITÁRIA que vai desalocar uma matriz
 void free_matrix(int** mat) {
     free(mat[0]);
     free(mat);
 }
+//---------------------------------------
 
-
+//---------------------------------------FUNÇÃO knapSack
 int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
 {
     // Matrix-based solution
@@ -37,14 +62,14 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
 
     // V Stores, for each (1 + i, j), the best profit for a knapscak
     // of capacity `j` considering every item k such that (0 <= k < i)
-    int i, j,k;
+    int i, j;
 
     // evaluate item `i`
     for(i = 0; i < n; i++) {
         for(j = 1; j <= MAXIMUM_CAPACITY; j++) {
             if(wt[i] <= j) { // could put item in knapsack
-                int previous_value = V[i][j];
-                int replace_items = val[i] + V[i][j - wt[i]];
+                int previous_value = V[1 + i - 1][j];
+                int replace_items = val[i] + V[1 + i - 1][j - wt[i]];
 
                 // is it better to keep what we already got,
                 // or is it better to swap whatever we have in the bag that weights up to `j`
@@ -53,34 +78,44 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
             }
             else {
                 // can't put item `i`
-                V[1 + i][j] = V[i][j];
-			}
+                V[1 + i][j] = V[1 + i - 1][j];
+            }
         }
     }
 
-    int retval = V[n][MAXIMUM_CAPACITY]; 
-    // for (k = 0; k<MAXIMUM_CAPACITY; ++k)
-    //     printf("%d ", V[n][k]);
+    int retval = V[1 + n - 1][MAXIMUM_CAPACITY]; 
     
     free_matrix(V);
     
     return retval;
 }
+//---------------------------------------
 
-// Driver program to test above function
+
+
+//---------------------------------------MAIN
 int main()
 {
-	int n, W;
+    int n, W;
 
-	scanf("%d %d", &n, &W);
-	int *val = (int*) calloc(n, sizeof(int));
-	int *wt = (int*) calloc(n, sizeof(int));
+    scanf("%d %d", &n, &W);
+    int *val = (int*) calloc(n, sizeof(int));
+    int *wt = (int*) calloc(n, sizeof(int));
 
-	int i;
-	for (i = 0; i < n; ++i) {
-		scanf("%d %d", &(val[i]), &(wt[i])); 
-	}
-    
-    printf("%d\n", knapsack(W, wt, val, n));
+    int i;
+    for (i = 0; i < n; ++i) {
+        scanf("%d %d", &(val[i]), &(wt[i])); 
+    }
+
+    //---------ALGORITMO
+    double s_init = timestamp();                    //T1
+    int max_value = knapsack(W, wt, val, n);
+    double s_end = timestamp();                     //T2
+    //--------------------------
+
+    printf("%d;%d;%d;%g\n", n,W,max_value,s_end-s_init); //PRINT FINAL
+
+    free(val);
+    free(wt);
     return 0;
 }

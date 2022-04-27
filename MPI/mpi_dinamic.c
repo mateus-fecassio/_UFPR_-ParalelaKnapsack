@@ -1,14 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <omp.h>
 #include <mpi.h>
+//-------------------------ESCOPO DAS FUNÇÕES
+double timestamp(void);
+int max(int a, int b);
+int** get_matrix(int rows, int columns);
+void free_matrix(int** mat);
+void print_knapsack (int n, int W, int *val, int *wt, int rank);
+int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int numproc);
+//-------------------------
 
 
-// A utility function that returns
-// maximum of two integers
+//---------------------------------------VARIÁVEIS GLOBAIS
+
+
+
+
+
+//---------------------------------------FUNÇÕES UTILITÁRIAS
+// FUNÇÃO PARA O CÁCULO DO TEMPO
+double timestamp(void){
+    struct timeval tp;
+    gettimeofday(&tp,NULL);
+    return ((double)(tp.tv_sec + (double)tp.tv_usec/1000000)); //em segundos
+}
+
+// FUNÇÃO UTILITÁRIA que vai retornar o máximo entre dois inteiros
 int max(int a, int b) {return (a > b) ? a : b;}
 
 
+// FUNÇÃO UTILITÁRIA que vai alocar uma matriz auxiliar
 int** get_matrix(int rows, int columns) {   
     int **mat;
     int i;
@@ -25,13 +48,27 @@ int** get_matrix(int rows, int columns) {
     return mat;
 }
 
+// FUNÇÃO UTILITÁRIA que vai desalocar uma matriz
 void free_matrix(int** mat) {
     free(mat[0]);
     free(mat);
 }
 
+// FUNÇÃO UTILITÁRIA, utilizada para verificar se todos os nós contém o mesmo conteúdo
+void print_knapsack (int n, int W, int *val, int *wt, int rank) {
+    printf("RANK = %d, n = %d, W = %d\n", rank,n,W);
+    // printf("RANK = %d\n", rank);
 
-int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int numproc, int map[]) {
+    for (int i = 0; i < n; ++i) {
+        printf(" %d %d ", val[i], wt[i]);
+    }
+    printf("\n\n");
+
+}
+//---------------------------------------
+
+//---------------------------------------FUNÇÃO knapSack
+int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int numproc) {
     // Matrix-based solution
     int** V = get_matrix(n + 1, MAXIMUM_CAPACITY + 1);
 
@@ -39,7 +76,7 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
     // of capacity `j` considering every item k such that (0 <= k < i)
     int i, j, k, previous_value, replace_items, value, tag_s, tag_r;
     MPI_Status status;
-	MPI_Request request;
+    MPI_Request request;
 
     int chunk = (MAXIMUM_CAPACITY+1)/numproc;
     int init, end;
@@ -62,7 +99,7 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
             } else {
                 // can't put item `i`
                 V[i][j] = V[i-1][j];
-			}
+            }
         }
       
         MPI_Allgather(&V[i][init], chunk,MPI_INT,&V[i][0],chunk,MPI_INT,MPI_COMM_WORLD);
@@ -103,64 +140,56 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
     
     return retval;
 }
+//---------------------------------------
 
 
-void print_knapsack (int n, int W, int *val, int *wt, int rank, int *map) {
-    printf("RANK = %d, n = %d, W = %d\n", rank,n,W);
-    // printf("RANK = %d\n", rank);
 
-    // for (int i = 0; i < n; ++i) {
-    //     printf(" %d %d ", val[i], wt[i]);
-    // }
-    // for (int i = 0; i < W; ++i) {
-    //     printf("%d ", map[i]);
-    // }
-    printf("\n\n");
-
-}
-
-// Driver program to test above function
+//---------------------------------------MAIN
 int main(int argc,char *argv[]) {
-	int n, W;
+    int n, W;
     int *val, *wt;
 
     int numproc, rank;
 
     MPI_Init(&argc,&argv);
-	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-	MPI_Comm_size(MPI_COMM_WORLD,&numproc);
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    MPI_Comm_size(MPI_COMM_WORLD,&numproc);
 
+    //leitura do número de itens e peso máximo da mochila
     if (rank == 0) {
-        printf("\nnumproc = %d\n", numproc);
+        // printf("\nnumproc = %d\n", numproc);
         scanf("%d %d", &n, &W);
     }
 
-    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD); //ENVIA E RECEBE
+    //Broadcast (envio e recebimento) dos dois valores lidos para todos os nós alocarem vetores necessários
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&W, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     val = (int*) calloc(n, sizeof(int));
     wt = (int*) calloc(n, sizeof(int));
 
+    //leitura dos valores de entrada para a mochila
     if (rank == 0) {
         for (int i = 0; i < n; ++i) {
             scanf("%d %d", &(val[i]), &(wt[i])); 
         }
     }
-    MPI_Bcast(&val[0], n, MPI_INT, 0, MPI_COMM_WORLD); //ENVIA E RECEBE
+
+    //Broadcast (envio e recebimento) dos valores lidos para a mochila
+    MPI_Bcast(&val[0], n, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&wt[0], n, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
 
-    int *map = (int*) calloc(W, sizeof(int));
-    for (int k = 0; k < W; ++k) {
-		map[k] = k%numproc;
-	}
+    // print_knapsack(n,W,val,wt,rank);
+    int result = knapsack(W, wt, val, n, rank, numproc);
 
-    print_knapsack(n,W,val,wt,rank,map);
-    int result = knapsack(W, wt, val, n, rank, numproc, map);
+    if (rank==0) {
+        printf("%d\n", result);
+    }
 
-    if (rank==0) printf("%d\n", result);
+
+
     MPI_Finalize();
-
     return 0;
 }
