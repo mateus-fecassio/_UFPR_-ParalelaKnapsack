@@ -37,7 +37,7 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
 
     // V Stores, for each (1 + i, j), the best profit for a knapscak
     // of capacity `j` considering every item k such that (0 <= k < i)
-    int i, j;
+    int i, j,k;
 
     // evaluate item `i`
     for(i = 0; i < n; i++) {
@@ -59,6 +59,8 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
     }
 
     int retval = V[n][MAXIMUM_CAPACITY]; 
+    // for (k = 0; k<MAXIMUM_CAPACITY; ++k)
+    //     printf("%d ", V[n][k]);
     
     free_matrix(V);
     

@@ -41,15 +41,17 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
     MPI_Status status;
 	MPI_Request request;
 
+    int chunk = (MAXIMUM_CAPACITY+1)/numproc;
+    int init, end;
     // evaluate item `i`
     for(i = 0; i <= n; i++) {
-        for(j = rank; j <= MAXIMUM_CAPACITY; j+=numproc) {
-        // for(j = 1; j <= MAXIMUM_CAPACITY; j++) {
+        init = (rank*chunk);
+        end = init+chunk;
+        for(j = init; j < end; j++) {
             if (i == 0 || j == 0) {
                 V[i][j] = 0;
             } else if (wt[i-1] <= j) { // could put item in knapsack
                 value = V[i-1][j - wt[i-1]];
-                // MPI_Recv(&value, 1, MPI_INT, map[j-wt[i]], i-1, MPI_COMM_WORLD, &status);
                 previous_value = V[i-1][j];
                 replace_items = val[i-1] + value;
 
@@ -57,35 +59,45 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
                 // or is it better to swap whatever we have in the bag that weights up to `j`
                 // and put item `i`?
                 V[i][j] = max(previous_value, replace_items);
-                // MPI_Bcast(&V[1 + i][j], 1, MPI_INT, 0, MPI_COMM_WORLD);
             } else {
                 // can't put item `i`
                 V[i][j] = V[i-1][j];
-                // MPI_Bcast(&V[1 + i][j], 1, MPI_INT, 0, MPI_COMM_WORLD);
 			}
-
-            if (rank != 0) {
-                MPI_Send(&V[i][j], 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-            } else {
-                MPI_Recv(&V[i][j], 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-            }
-            // tag_s = ((1+i)*n)+j;
-            // MPI_Isend(&V[i+1][j], 1, MPI_INT, map[j], tag_s, MPI_COMM_WORLD, &request);
-
-            // MPI_Recv(&V[i+1][j], 1, MPI_INT, map[j], tag_s, MPI_COMM_WORLD, &status);
-            // MPI_Bcast(&V[i][j], 1, MPI_INT, rank, MPI_COMM_WORLD);
-            // MPI_Barrier(MPI_COMM_WORLD);
-            // for(k=j+1; k<MAXIMUM_CAPACITY; k++){
-			// 	if(k-j == wt[i+1]){
-			// 		MPI_Isend(&V[i][j], 1, MPI_INT, map[k], i, MPI_COMM_WORLD, &request);
-			// 	}
-			// }
         }
-        MPI_Bcast(&V[i][j], MAXIMUM_CAPACITY, MPI_INT, 0, MPI_COMM_WORLD);
+      
+        MPI_Allgather(&V[i][init], chunk,MPI_INT,&V[i][0],chunk,MPI_INT,MPI_COMM_WORLD);
+
+        if ((MAXIMUM_CAPACITY+1)%numproc != 0) {
+            if (rank == 0) {
+                init = ((numproc-1)*chunk);
+                end = MAXIMUM_CAPACITY+1;
+                
+                for(j = init; j < end; j++) {
+                    if (i == 0 || j == 0) {
+                        V[i][j] = 0;
+                    } else if (wt[i-1] <= j) { // could put item in knapsack
+                        value = V[i-1][j - wt[i-1]];
+                        previous_value = V[i-1][j];
+                        replace_items = val[i-1] + value;
+
+                        // is it better to keep what we already got,
+                        // or is it better to swap whatever we have in the bag that weights up to `j`
+                        // and put item `i`?
+                        V[i][j] = max(previous_value, replace_items);
+                    } else {
+                        // can't put item `i`
+                        V[i][j] = V[i-1][j];
+                    }
+                }
+            
+            //broadcast
+            MPI_Bcast(&V[i][init], end-init, MPI_INT, 0, MPI_COMM_WORLD);
+            }
+        }
+       
     }
 
     int retval = V[n][MAXIMUM_CAPACITY];
-    printf("teste=%d\n",retval);
     
     free_matrix(V);
     
@@ -97,9 +109,9 @@ void print_knapsack (int n, int W, int *val, int *wt, int rank, int *map) {
     printf("RANK = %d, n = %d, W = %d\n", rank,n,W);
     // printf("RANK = %d\n", rank);
 
-    for (int i = 0; i < n; ++i) {
-        printf(" %d %d ", val[i], wt[i]);
-    }
+    // for (int i = 0; i < n; ++i) {
+    //     printf(" %d %d ", val[i], wt[i]);
+    // }
     // for (int i = 0; i < W; ++i) {
     //     printf("%d ", map[i]);
     // }
@@ -145,8 +157,9 @@ int main(int argc,char *argv[]) {
 	}
 
     print_knapsack(n,W,val,wt,rank,map);
+    int result = knapsack(W, wt, val, n, rank, numproc, map);
 
-    printf("%d\n", knapsack(W, wt, val, n, rank, numproc, map));
+    if (rank==0) printf("%d\n", result);
     MPI_Finalize();
 
     return 0;
