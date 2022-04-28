@@ -14,7 +14,8 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
 
 
 //---------------------------------------VARIÁVEIS GLOBAIS
-
+double seq_time = 0;
+double par_time = 0;
 
 
 
@@ -78,11 +79,12 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
     MPI_Status status;
     MPI_Request request;
 
+    //cálculo do chunk_size, ou seja, o pedaço com que cada processador vai ficar responsável
     int chunk = (MAXIMUM_CAPACITY+1)/numproc;
     int init, end;
     // evaluate item `i`
     for(i = 0; i <= n; i++) {
-        init = (rank*chunk);
+        init = rank*chunk;
         end = init+chunk;
         for(j = init; j < end; j++) {
             if (i == 0 || j == 0) {
@@ -101,9 +103,12 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
                 V[i][j] = V[i-1][j];
             }
         }
-      
+
+        //realiza uma operação de all_gather para juntar todas as frações de chunks que foram calculadas por outros processadores
         MPI_Allgather(&V[i][init], chunk,MPI_INT,&V[i][0],chunk,MPI_INT,MPI_COMM_WORLD);
 
+
+        //verifica e calcula se existe algum resto de matriz a ser calculada. se existir, isso ficará a cargo do root
         if ((MAXIMUM_CAPACITY+1)%numproc != 0) {
             if (rank == 0) {
                 init = ((numproc-1)*chunk);
@@ -127,7 +132,7 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
                     }
                 }
             
-            //broadcast
+            //realiza o broadcast da quantidade de itens (end-init) que foram calculados como resto da operação para todos os processadores
             MPI_Bcast(&V[i][init], end-init, MPI_INT, 0, MPI_COMM_WORLD);
             }
         }
@@ -151,12 +156,16 @@ int main(int argc,char *argv[]) {
 
     int numproc, rank;
 
+    double t_init, t_end;
+
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     MPI_Comm_size(MPI_COMM_WORLD,&numproc);
 
     //leitura do número de itens e peso máximo da mochila
     if (rank == 0) {
+        t_init = timestamp();                    //T1
+
         // printf("\nnumproc = %d\n", numproc);
         scanf("%d %d", &n, &W);
     }
@@ -180,15 +189,16 @@ int main(int argc,char *argv[]) {
     MPI_Bcast(&wt[0], n, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
-
     // print_knapsack(n,W,val,wt,rank);
-    int result = knapsack(W, wt, val, n, rank, numproc);
+    //---------ALGORITMO
+    int max_value = knapsack(W, wt, val, n, rank, numproc);
+    //--------------------------
 
     if (rank==0) {
-        printf("%d\n", result);
+        t_end = timestamp();                     //T2
+        //n_obj;max_weight;max_value;total_time
+        printf("%d;%d;%d;%g\n" ,n,W,max_value,t_end-t_init); //PRINT FINAL
     }
-
-
 
     MPI_Finalize();
     return 0;

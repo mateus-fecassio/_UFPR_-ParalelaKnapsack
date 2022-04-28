@@ -2,8 +2,8 @@
 
 gcc createItem.c -o createItem
 
-n_obj=(100 200 400 800 1600)
-weight_max=(40 80 160 320 640)
+n_obj=(2000 4000 8000 12000 16000 18000 20000)
+weight_max=(100000)
 
 
 for obj in ${n_obj[@]}

@@ -74,7 +74,7 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
                 // is it better to keep what we already got,
                 // or is it better to swap whatever we have in the bag that weights up to `j`
                 // and put item `i`?
-                V[1 + i][j]= max(previous_value, replace_items);
+                V[1 + i][j] = max(previous_value, replace_items);
             }
             else {
                 // can't put item `i`
@@ -96,6 +96,8 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
 //---------------------------------------MAIN
 int main()
 {
+    double t_init = timestamp();                    //T1
+
     int n, W;
 
     scanf("%d %d", &n, &W);
@@ -108,12 +110,14 @@ int main()
     }
 
     //---------ALGORITMO
-    double s_init = timestamp();                    //T1
+    double s_init = timestamp();
     int max_value = knapsack(W, wt, val, n);
-    double s_end = timestamp();                     //T2
+    double s_end = timestamp();
     //--------------------------
-
-    printf("%d;%d;%d;%g\n", n,W,max_value,s_end-s_init); //PRINT FINAL
+    
+    double t_end = timestamp();                     //T2
+    //n_obj;max_weight;max_value;parallelizable_time;total_time
+    printf("%d;%d;%d;%g;%g\n", n,W,max_value,s_end-s_init,t_end-t_init); //PRINT FINAL
 
     free(val);
     free(wt);
