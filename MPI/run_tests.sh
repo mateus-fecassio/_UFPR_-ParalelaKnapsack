@@ -30,7 +30,7 @@ done
 
 
 
-# PARALELO
+# PARALELO (MPI approach)
 PAR=./parallel
 for entry in ${ITEMS[@]}
 do
@@ -49,6 +49,7 @@ do
             printf "$((proc));" >> "$out_p"
             # nice -n -20 $PAR $proc $CACHEL2 < $entry >> "$out_p"
             mpirun -np $proc $PAR < $entry | tr "." "," >> "$out_p"
+            sleep 5
         done
     done
 done
