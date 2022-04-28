@@ -202,6 +202,10 @@ int main(int argc,char *argv[]) {
         printf("%d;%d;%d;%g\n" ,n,W,max_value,t_end-t_init); //PRINT FINAL
     }
 
+
+    free(val);
+    free(wt);
+    
     MPI_Finalize();
     return 0;
 }
