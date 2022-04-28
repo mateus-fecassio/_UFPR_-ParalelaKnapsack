@@ -39,7 +39,7 @@ do
     for proc in ${procs[@]}
     do
         echo "PARALELO($proc): $entry"
-        out_p=$OUTPUT"/paralelo/"$proc-$size
+        out_p=$OUTPUT"/paralelo/"$size"($proc)"
         out_p=$out_p.csv
         echo "i;procs;n_obj;max_weight;max_value;total_time" > "$out_p"
 

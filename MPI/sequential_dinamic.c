@@ -94,8 +94,7 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n)
 
 
 //---------------------------------------MAIN
-int main()
-{
+int main(){
     double t_init = timestamp();                    //T1
 
     int n, W;
