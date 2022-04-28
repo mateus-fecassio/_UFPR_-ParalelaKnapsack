@@ -1,6 +1,6 @@
 CC=gcc
 MPICC=mpicc
-CFLAG=-g
+CFLAG=-g -O3
 targets = parallel sequential
 objects = parallel.o sequential.o
 
