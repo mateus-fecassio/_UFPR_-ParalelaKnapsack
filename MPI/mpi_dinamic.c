@@ -14,8 +14,6 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
 
 
 //---------------------------------------VARIÁVEIS GLOBAIS
-double seq_time = 0;
-double par_time = 0;
 
 
 
