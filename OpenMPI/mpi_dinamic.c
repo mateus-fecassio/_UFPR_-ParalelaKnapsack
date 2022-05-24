@@ -108,11 +108,10 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
 
         //verifica e calcula se existe algum resto de matriz a ser calculada. se existir, isso ficará a cargo do root
         if ((MAXIMUM_CAPACITY+1)%numproc != 0) {
+            init = ((numproc)*chunk);
+            end = MAXIMUM_CAPACITY+1;
             if (rank == 0) {
-                init = ((numproc)*chunk);
-                end = MAXIMUM_CAPACITY+1;
                 // printf("%d %d   ", init, end);
-                
                 for(j = init; j < end; j++) {
                     if (i == 0 || j == 0) {
                         V[i][j] = 0;
@@ -130,11 +129,9 @@ int knapsack(int MAXIMUM_CAPACITY, int wt[], int val[], int n, int rank, int num
                         V[i][j] = V[i-1][j];
                     }
                 }
-            
+            }
             //realiza o broadcast da quantidade de itens (end-init) que foram calculados como resto da operação para todos os processadores
             MPI_Bcast(&V[i][init], end-init, MPI_INT, 0, MPI_COMM_WORLD);
-            }
-            // MPI_Bcast(&V[i][init], end-init, MPI_INT, 0, MPI_COMM_WORLD);
         }
        
     }
